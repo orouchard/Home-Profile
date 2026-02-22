@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Olivier's Flight Roster – March 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(165deg, #F8F6FB 0%, #FDFCFE 40%, #F5F8FC 100%);
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    padding: 32px 20px;
+    color: #1a1a2e;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .container { max-width: 580px; margin: 0 auto; }
+
+  /* Header */
+  .header { text-align: center; margin-bottom: 28px; animation: fadeSlideIn 0.5s ease forwards; }
+  .badge-qr {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: linear-gradient(135deg, #7B2D8E, #4A154B);
+    color: #fff; padding: 8px 20px; border-radius: 40px;
+    font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    margin-bottom: 16px; box-shadow: 0 4px 20px rgba(123,45,142,0.25);
+  }
+  .badge-qr .icon { font-size: 16px; }
+  h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #888; margin-bottom: 10px; }
+  .legend { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .legend-item {
+    font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px;
+  }
+  .legend-utc { background: #E3F0FC; color: #1565C0; border: 1px solid #BBDEFB; }
+  .legend-local { background: #F3E8F9; color: #7B2D8E; border: 1px solid #D4A5E5; }
+  .legend-doha { background: #FFF4E0; color: #C27200; border: 1px solid #F0C674; }
+
+  /* Stats */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 24px;
+  }
+  .stat-card {
+    text-align: center; padding: 14px 8px; border-radius: 12px;
+    background: #fff; border: 1px solid #f0edf3;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+  }
+  .stat-val { font-size: 22px; font-weight: 700; }
+  .stat-label { font-size: 10px; color: #999; margin-top: 2px; font-weight: 500; }
+
+  /* Destinations */
+  .destinations { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 20px; }
+  .dest-tag {
+    font-size: 11px; font-weight: 600; padding: 4px 10px;
+    border-radius: 20px; background: #fff; border: 1px solid #eee; color: #555;
+  }
+  .dest-tag .city { color: #bbb; font-weight: 400; }
+  .dest-tag .utc { color: #1565C0; font-weight: 600; margin-left: 4px; font-size: 10px; }
+
+  /* Filters */
+  .filters {
+    display: flex; gap: 6px; margin-bottom: 24px;
+    padding: 4px; background: #fff; border-radius: 12px; border: 1px solid #f0edf3;
+  }
+  .filter-btn {
+    flex: 1; padding: 8px 4px; border-radius: 9px; border: none;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+    transition: all 0.2s ease; background: transparent; color: #888;
+    font-family: inherit;
+  }
+  .filter-btn.active {
+    background: linear-gradient(135deg, #7B2D8E, #4A154B); color: #fff;
+  }
+  .filter-btn .count { display: block; font-size: 9px; font-weight: 400; opacity: 0.7; margin-top: 1px; }
+
+  /* Timeline */
+  .timeline {
+    background: #fff; border-radius: 20px; padding: 20px 12px;
+    border: 1px solid #f0edf3; box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+  }
+
+  .day-card {
+    cursor: pointer;
+    opacity: 0; animation: fadeSlideIn 0.4s ease forwards;
+  }
+  .day-inner {
+    display: flex; gap: 16px; padding: 14px 20px; border-radius: 14px;
+    border: 1.5px solid transparent; transition: all 0.25s ease;
+    position: relative;
+  }
+  .day-inner.selected-flight { background: #F3E8F9; border-color: #D4A5E5; }
+  .day-inner.selected-standby { background: #FFF4E0; border-color: #F0C674; }
+  .day-inner.selected-off, .day-inner.selected-goff { background: #E8F5EE; border-color: #8FD4A8; }
+  .day-inner.selected-doff { background: #E3F2F9; border-color: #7EC8E3; }
+
+  /* Timeline spine */
+  .tl-spine {
+    display: flex; flex-direction: column; align-items: center;
+    position: relative; min-width: 44px;
+  }
+  .tl-date {
+    font-size: 13px; font-weight: 700; margin-bottom: 6px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .tl-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2.5px solid; transition: all 0.25s ease; z-index: 1;
+  }
+  .tl-dot.active { box-shadow: 0 0 0 4px; }
+  .tl-line {
+    position: absolute; top: 38px; bottom: -14px; width: 2px; border-radius: 1px;
+  }
+
+  .day-content { flex: 1; min-width: 0; }
+  .day-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+  .day-icon { font-size: 15px; }
+  .day-label { font-size: 14px; font-weight: 700; letter-spacing: 0.3px; }
+  .day-dow { font-size: 11px; color: #aaa; margin-left: auto; font-family: 'JetBrains Mono', monospace; }
+  .day-details { font-size: 12px; color: #777; margin-top: 2px; }
+
+  /* Flight cards */
+  .flight-card {
+    padding: 12px 14px; background: rgba(123,45,142,0.03); border-radius: 12px;
+    margin-top: 8px; border: 1px solid rgba(123,45,142,0.08);
+  }
+  .flight-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+  .flight-fn { font-size: 12px; font-weight: 700; color: #7B2D8E; letter-spacing: 0.5px; }
+  .flight-acf {
+    font-size: 9px; color: #999; background: #f5f0f8; padding: 2px 6px;
+    border-radius: 4px; font-weight: 600;
+  }
+  .route { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .route-airport { text-align: center; }
+  .route-code { font-size: 18px; font-weight: 700; }
+  .route-city { font-size: 9px; color: #aaa; }
+  .route-line {
+    flex: 1; position: relative; height: 20px; display: flex; align-items: center;
+  }
+  .route-line-bar {
+    position: absolute; top: 50%; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, #D4A5E5, #7B2D8E); border-radius: 1px;
+  }
+  .route-line-arrow {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-size: 14px; color: #7B2D8E;
+  }
+  .route-line-dot {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 7px; height: 7px; border-radius: 50%; background: #7B2D8E;
+  }
+  .route-line-dot.left { left: 0; }
+  .route-line-dot.right { right: 0; }
+
+  .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .time-col {
+    background: #fff; border-radius: 8px; padding: 8px 10px; border: 1px solid #f0edf3;
+  }
+  .time-col-label {
+    font-size: 9px; font-weight: 700; color: #aaa; margin-bottom: 6px;
+    text-transform: uppercase; letter-spacing: 0.8px;
+  }
+  .time-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .time-badge {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 3px 7px; border-radius: 6px; min-width: 52px;
+  }
+  .time-badge-label {
+    font-size: 8px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.5px; line-height: 1;
+  }
+  .time-badge-val {
+    font-size: 12px; font-weight: 700; color: #1a1a2e;
+    font-family: 'JetBrains Mono', monospace; line-height: 1.4;
+  }
+  .tb-utc { background: #E3F0FC; }
+  .tb-utc .time-badge-label { color: #1565C0; }
+  .tb-local { background: #F3E8F9; }
+  .tb-local .time-badge-label { color: #7B2D8E; }
+  .tb-doha { background: #FFF4E0; }
+  .tb-doha .time-badge-label { color: #C27200; }
+
+  .footer {
+    text-align: center; margin-top: 20px; font-size: 11px; color: #bbb; line-height: 1.6;
+  }
+
+  /* Color helpers */
+  .c-flight { color: #7B2D8E; }
+  .c-standby { color: #C27200; }
+  .c-off { color: #2E7D4F; }
+  .c-goff { color: #2E7D4F; }
+  .c-doff { color: #1A6B8A; }
+
+  .dot-flight { border-color: #7B2D8E; background: #F3E8F9; }
+  .dot-flight.active { background: #7B2D8E; box-shadow-color: #F3E8F9; }
+  .dot-standby { border-color: #C27200; background: #FFF4E0; }
+  .dot-standby.active { background: #C27200; }
+  .dot-off { border-color: #2E7D4F; background: #E8F5EE; }
+  .dot-off.active { background: #2E7D4F; }
+  .dot-goff { border-color: #2E7D4F; background: #E8F5EE; }
+  .dot-goff.active { background: #2E7D4F; }
+  .dot-doff { border-color: #1A6B8A; background: #E3F2F9; }
+  .dot-doff.active { background: #1A6B8A; }
+
+  .line-flight { background: linear-gradient(180deg, #D4A5E5, transparent); }
+  .line-standby { background: linear-gradient(180deg, #F0C674, transparent); }
+  .line-off { background: linear-gradient(180deg, #8FD4A8, transparent); }
+  .line-goff { background: linear-gradient(180deg, #8FD4A8, transparent); }
+  .line-doff { background: linear-gradient(180deg, #7EC8E3, transparent); }
+
+  @media (max-width: 420px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .time-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="app"></div>
+
+<script>
+const UTC_OFFSETS = { DOH: 3, DAM: 3, IST: 3, ALG: 1, TFU: 8, KHI: 5, MCT: 4 };
+const AIRPORT_NAMES = { DOH: "Doha", DAM: "Damascus", IST: "Istanbul", ALG: "Algiers", TFU: "Chengdu", KHI: "Karachi", MCT: "Muscat" };
+const TYPE_ICONS = { flight: "✈", standby: "⏳", off: "🏠", goff: "🏠", doff: "🏨" };
+const TYPE_LABELS_MAP = { off: "Day Off", goff: "Day Off", doff: "Day Off (Layover)", standby: "Planned Standby", flight: "Flight" };
+
+function toLocal(utcTime, offset) {
+  const plus1 = utcTime.includes("+1");
+  const clean = utcTime.replace("(+1)", "").replace("+1", "").trim();
+  const parts = clean.split(":").map(Number);
+  let h = parts[0] + offset, ds = plus1 ? 1 : 0;
+  if (h >= 24) { h -= 24; ds++; }
+  if (h < 0) { h += 24; ds--; }
+  return String(h).padStart(2,"0") + ":" + String(parts[1]).padStart(2,"0") + (ds > 0 ? "+" + ds : "");
+}
+
+const ROSTER = [
+  { date:"2026-03-01", day:"Sun", type:"off", label:"OFF" },
+  { date:"2026-03-02", day:"Mon", type:"standby", label:"PSBY", details:"Report 13:01z / 16:01 DOH — End 20:00z / 23:00 DOH" },
+  { date:"2026-03-03", day:"Tue", type:"standby", label:"PSBY", details:"Report 11:31z / 14:31 DOH — End 18:29z / 21:29 DOH" },
+  { date:"2026-03-04", day:"Wed", type:"standby", label:"PSBY", details:"Report 12:31z / 15:31 DOH — End 19:29z / 22:29 DOH" },
+  { date:"2026-03-05", day:"Thu", type:"off", label:"OFF" },
+  { date:"2026-03-06", day:"Fri", type:"off", label:"OFF" },
+  { date:"2026-03-07", day:"Sat", type:"off", label:"OFF" },
+  { date:"2026-03-08", day:"Sun", type:"flight", label:"DAM Turn", details:"Report 03:55z / 06:55 DOH",
+    flights:[
+      { fn:"QR410", dep:"DOH", arr:"DAM", utcDep:"05:10", utcArr:"08:30", acf:"A333" },
+      { fn:"QR411", dep:"DAM", arr:"DOH", utcDep:"10:45", utcArr:"13:25", acf:"A333" }
+    ]},
+  { date:"2026-03-09", day:"Mon", type:"flight", label:"IST Turn", details:"Report 03:30z / 06:30 DOH",
+    flights:[
+      { fn:"QR239", dep:"DOH", arr:"IST", utcDep:"04:45", utcArr:"09:20", acf:"A332" },
+      { fn:"QR240", dep:"IST", arr:"DOH", utcDep:"10:50", utcArr:"14:50", acf:"A332" }
+    ]},
+  { date:"2026-03-10", day:"Tue", type:"goff", label:"GOFF" },
+  { date:"2026-03-11", day:"Wed", type:"goff", label:"GOFF" },
+  { date:"2026-03-12", day:"Thu", type:"goff", label:"GOFF" },
+  { date:"2026-03-13", day:"Fri", type:"goff", label:"GOFF" },
+  { date:"2026-03-14", day:"Sat", type:"flight", label:"ALG (Out)", details:"Report 03:55z / 06:55 DOH",
+    flights:[
+      { fn:"QR1379", dep:"DOH", arr:"ALG", utcDep:"05:10", utcArr:"12:25", acf:"A333" }
+    ]},
+  { date:"2026-03-15", day:"Sun", type:"flight", label:"ALG (Rtn)", details:"Report 13:40z / 16:40 DOH",
+    flights:[
+      { fn:"QR1380", dep:"ALG", arr:"DOH", utcDep:"14:40", utcArr:"20:40", acf:"A333" }
+    ]},
+  { date:"2026-03-16", day:"Mon", type:"flight", label:"TFU (Out)", details:"Report 21:25z / 00:25+1 DOH",
+    flights:[
+      { fn:"QR860", dep:"DOH", arr:"TFU", utcDep:"22:40", utcArr:"05:55(+1)", acf:"A333" }
+    ]},
+  { date:"2026-03-17", day:"Tue", type:"doff", label:"DOFF", details:"Layover in TFU (Chengdu)" },
+  { date:"2026-03-18", day:"Wed", type:"flight", label:"TFU (Rtn)", details:"Report 16:05z / 00:05+1 TFU",
+    flights:[
+      { fn:"QR861", dep:"TFU", arr:"DOH", utcDep:"17:05", utcArr:"01:45(+1)", acf:"A333" }
+    ]},
+  { date:"2026-03-19", day:"Thu", type:"off", label:"OFF" },
+  { date:"2026-03-20", day:"Fri", type:"off", label:"OFF" },
+  { date:"2026-03-21", day:"Sat", type:"flight", label:"KHI Turn", details:"Report 16:55z / 19:55 DOH",
+    flights:[
+      { fn:"QR604", dep:"DOH", arr:"KHI", utcDep:"18:10", utcArr:"20:35", acf:"A333" },
+      { fn:"QR605", dep:"KHI", arr:"DOH", utcDep:"23:20", utcArr:"02:10(+1)", acf:"A333" }
+    ]},
+  { date:"2026-03-22", day:"Sun", type:"flight", label:"MCT Turn", details:"Report 21:35z / 00:35+1 DOH",
+    flights:[
+      { fn:"QR1148", dep:"DOH", arr:"MCT", utcDep:"22:50", utcArr:"00:25(+1)", acf:"A333" },
+      { fn:"QR1149", dep:"MCT", arr:"DOH", utcDep:"01:55", utcArr:"03:30", acf:"A333" }
+    ]},
+  { date:"2026-03-23", day:"Mon", type:"flight", label:"TFU (Out)", details:"Report 21:25z / 00:25+1 DOH",
+    flights:[
+      { fn:"QR860", dep:"DOH", arr:"TFU", utcDep:"22:40", utcArr:"05:55(+1)", acf:"A333" }
+    ]},
+  { date:"2026-03-24", day:"Tue", type:"doff", label:"DOFF", details:"Layover in TFU (Chengdu)" },
+  { date:"2026-03-25", day:"Wed", type:"flight", label:"TFU (Rtn)", details:"Report 17:00z / 01:00+1 TFU",
+    flights:[
+      { fn:"QR861", dep:"TFU", arr:"DOH", utcDep:"18:00", utcArr:"02:10(+1)", acf:"A333" }
+    ]},
+  { date:"2026-03-26", day:"Thu", type:"off", label:"OFF" },
+  { date:"2026-03-27", day:"Fri", type:"off", label:"OFF" },
+  { date:"2026-03-28", day:"Sat", type:"flight", label:"MCT Turn", details:"Report 21:25z / 00:25+1 DOH",
+    flights:[
+      { fn:"QR1148", dep:"DOH", arr:"MCT", utcDep:"22:50", utcArr:"00:25(+1)", acf:"A333" },
+      { fn:"QR1149", dep:"MCT", arr:"DOH", utcDep:"01:55", utcArr:"03:30", acf:"A333" }
+    ]},
+  { date:"2026-03-29", day:"Sun", type:"flight", label:"TFU (Out)", details:"Report 21:25z / 00:25+1 DOH",
+    flights:[
+      { fn:"QR860", dep:"DOH", arr:"TFU", utcDep:"22:40", utcArr:"05:55(+1)", acf:"A333" }
+    ]},
+  { date:"2026-03-30", day:"Mon", type:"off", label:"OFF" },
+  { date:"2026-03-31", day:"Tue", type:"off", label:"OFF" }
+];
+
+let selectedDate = null;
+let activeFilter = "all";
+
+function esc(s) { const d = document.createElement("div"); d.textContent = s; return d.innerHTML; }
+
+function renderTimeBadge(label, time, cls) {
+  return `<div class="time-badge ${cls}">
+    <span class="time-badge-label">${esc(label)}</span>
+    <span class="time-badge-val">${esc(time)}</span>
+  </div>`;
+}
+
+function renderFlightCard(f) {
+  const depLocal = toLocal(f.utcDep, UTC_OFFSETS[f.dep] || 0);
+  const arrLocal = toLocal(f.utcArr, UTC_OFFSETS[f.arr] || 0);
+  const depDoha = toLocal(f.utcDep, 3);
+  const arrDoha = toLocal(f.utcArr, 3);
+  const utcDepClean = f.utcDep.replace("(+1)", "+1");
+  const utcArrClean = f.utcArr.replace("(+1)", "+1");
+
+  let depBadges = renderTimeBadge("UTC", utcDepClean, "tb-utc")
+    + renderTimeBadge(f.dep, depLocal, "tb-local");
+  if (f.dep !== "DOH") depBadges += renderTimeBadge("DOH", depDoha, "tb-doha");
+
+  let arrBadges = renderTimeBadge("UTC", utcArrClean, "tb-utc")
+    + renderTimeBadge(f.arr, arrLocal, "tb-local");
+  if (f.arr !== "DOH") arrBadges += renderTimeBadge("DOH", arrDoha, "tb-doha");
+
+  return `<div class="flight-card">
+    <div class="flight-header">
+      <span class="flight-fn">${esc(f.fn)}</span>
+      <span class="flight-acf">${esc(f.acf)}</span>
+    </div>
+    <div class="route">
+      <div class="route-airport">
+        <div class="route-code">${esc(f.dep)}</div>
+        <div class="route-city">${esc(AIRPORT_NAMES[f.dep] || "")}</div>
+      </div>
+      <div class="route-line">
+        <div class="route-line-bar"></div>
+        <div class="route-line-arrow">→</div>
+        <div class="route-line-dot left"></div>
+        <div class="route-line-dot right"></div>
+      </div>
+      <div class="route-airport">
+        <div class="route-code">${esc(f.arr)}</div>
+        <div class="route-city">${esc(AIRPORT_NAMES[f.arr] || "")}</div>
+      </div>
+    </div>
+    <div class="time-grid">
+      <div class="time-col">
+        <div class="time-col-label">Departure</div>
+        <div class="time-badges">${depBadges}</div>
+      </div>
+      <div class="time-col">
+        <div class="time-col-label">Arrival</div>
+        <div class="time-badges">${arrBadges}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderDayCard(entry, index) {
+  const dateNum = parseInt(entry.date.split("-")[2]);
+  const t = entry.type;
+  const isSelected = selectedDate === entry.date;
+  const selectedClass = isSelected ? ` selected-${t}` : "";
+  const dotActive = isSelected ? " active" : "";
+
+  let flightsHtml = "";
+  if (isSelected && entry.flights) {
+    flightsHtml = entry.flights.map(renderFlightCard).join("");
+  }
+
+  return `<div class="day-card" style="animation-delay:${index * 0.03}s" data-date="${entry.date}">
+    <div class="day-inner${selectedClass}">
+      <div class="tl-spine">
+        <div class="tl-date c-${t}">${dateNum}</div>
+        <div class="tl-dot dot-${t}${dotActive}"></div>
+        <div class="tl-line line-${t}"></div>
+      </div>
+      <div class="day-content">
+        <div class="day-header">
+          <span class="day-icon">${TYPE_ICONS[t]}</span>
+          <span class="day-label c-${t}">${esc(entry.label)}</span>
+          <span class="day-dow">${esc(entry.day)}</span>
+        </div>
+        ${entry.details ? `<div class="day-details">${esc(entry.details)}</div>` : ""}
+        ${flightsHtml}
+      </div>
+    </div>
+  </div>`;
+}
+
+function getFiltered() {
+  if (activeFilter === "all") return ROSTER;
+  if (activeFilter === "flights") return ROSTER.filter(d => d.type === "flight");
+  if (activeFilter === "off") return ROSTER.filter(d => ["off","goff","doff"].includes(d.type));
+  if (activeFilter === "standby") return ROSTER.filter(d => d.type === "standby");
+  return ROSTER;
+}
+
+function render() {
+  const flightDays = ROSTER.filter(d => d.type === "flight").length;
+  const offDays = ROSTER.filter(d => ["off","goff","doff"].includes(d.type)).length;
+  const sbyDays = ROSTER.filter(d => d.type === "standby").length;
+  const totalSectors = ROSTER.reduce((a, d) => a + (d.flights ? d.flights.length : 0), 0);
+  const dests = [...new Set(ROSTER.flatMap(d => (d.flights || []).flatMap(f => [f.dep, f.arr])))].filter(Boolean);
+
+  const filtered = getFiltered();
+
+  const filters = [
+    { key:"all", label:"All Days", count:31 },
+    { key:"flights", label:"Flights", count:flightDays },
+    { key:"off", label:"Days Off", count:offDays },
+    { key:"standby", label:"Standby", count:sbyDays }
+  ];
+
+  const statsData = [
+    { val: flightDays, label: "Flight Days", color: "#7B2D8E" },
+    { val: totalSectors, label: "Sectors", color: "#9B59B6" },
+    { val: "67:35", label: "Block Hrs", color: "#1A6B8A" },
+    { val: sbyDays, label: "Standby", color: "#C27200" }
+  ];
+
+  document.getElementById("app").innerHTML = `
+    <div class="header">
+      <div class="badge-qr"><span class="icon">✈</span> Qatar Airways</div>
+      <h1>Olivier's Flight Roster</h1>
+      <p class="subtitle">March 2026 · FO-A330 · ID 151049</p>
+      <div class="legend">
+        <span class="legend-item legend-utc">UTC</span>
+        <span class="legend-item legend-local">Local Station</span>
+        <span class="legend-item legend-doha">Doha (UTC+3)</span>
+      </div>
+    </div>
+
+    <div class="stats">
+      ${statsData.map(s => `<div class="stat-card">
+        <div class="stat-val" style="color:${s.color}">${s.val}</div>
+        <div class="stat-label">${s.label}</div>
+      </div>`).join("")}
+    </div>
+
+    <div class="destinations">
+      ${dests.map(d => `<span class="dest-tag">${esc(d)} <span class="city">${esc(AIRPORT_NAMES[d] || "")}</span><span class="utc">UTC+${UTC_OFFSETS[d]}</span></span>`).join("")}
+    </div>
+
+    <div class="filters">
+      ${filters.map(f => `<button class="filter-btn${activeFilter === f.key ? " active" : ""}" data-filter="${f.key}">
+        ${esc(f.label)}<span class="count">${f.count}</span>
+      </button>`).join("")}
+    </div>
+
+    <div class="timeline">
+      ${filtered.map((entry, i) => renderDayCard(entry, i)).join("")}
+    </div>
+
+    <div class="footer">
+      Tap any flight day to see UTC, local station, and Doha times<br>
+      TFU +8 · KHI +5 · MCT +4 · DOH/IST/DAM +3 · ALG +1
+    </div>
+  `;
+
+  // Bind events
+  document.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeFilter = btn.dataset.filter;
+      selectedDate = null;
+      render();
+    });
+  });
+  document.querySelectorAll(".day-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const d = card.dataset.date;
+      selectedDate = selectedDate === d ? null : d;
+      render();
+    });
+  });
+}
+
+render();
+</script>
+</body>
+</html>
